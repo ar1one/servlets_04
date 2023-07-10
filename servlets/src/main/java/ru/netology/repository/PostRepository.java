@@ -8,12 +8,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 // Stub
 public class PostRepository {
     private ConcurrentHashMap<Long, Post> rep = new ConcurrentHashMap<>();
-    private long count = 0;
+    private AtomicLong count = new AtomicLong(0);
 
     public List<Post> all() {
         return new ArrayList<>(rep.values());
@@ -33,18 +34,18 @@ public class PostRepository {
   что вы будете делать, если поста с таким id не оказалось: здесь могут быть разные стратегии.
      */
 
-    public Post save(Post post) {
+    public synchronized Post save(Post post) {
         if (post.getId() == 0) {
-            if (count == 0) {
-                rep.put(count++, post);
+            if (count.get() == 0) {
+                rep.put(count.incrementAndGet(), post);
             } else {
-                post.setId(count);
-                rep.put(count++, post);
+                post.setId(count.get());
+                rep.put(count.incrementAndGet(), post);
             }
         } else {
             long postCount = post.getId();
             if (rep.containsKey(postCount)) {
-                rep.put(postCount, post);
+                rep.put(postCount+1, post);
             } else {
                 throw new NotFoundException("Что то пошло не так...");
             }
